@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
 class StockData():
-    def __init__(self, input_length, output_length):
+    def __init__(self, input_length, output_length,output_steps_ahead):
         self.datasnp = yf.download( 
                 tickers = "^GSPC",
                 period = "max",
@@ -38,6 +38,7 @@ class StockData():
         
         self.input_seq_len = input_length
         self.output_seq_len = output_length
+        self.output_steps_ahead = output_steps_ahead
         self.clean_data()
         self.norm_data()
         self.create_dataset()
@@ -100,7 +101,7 @@ class StockData():
     def display_data_norm(self):
         sns.set_style('whitegrid')
         plt.style.use("fivethirtyeight")
-        fig, axes = plt.subplots(nrows=2, ncols=2,figsize = (10, 10))
+        fig, axes = plt.subplots(nrows=2, ncols=2,figsize = (10, 8))
         plt.subplots_adjust(top=1.25, bottom=1.2)
         fig.tight_layout(pad=1.0)
         plt.rcParams.update({'font.size': 12})
@@ -120,6 +121,7 @@ class StockData():
         for i in range(dataset_length):
             self.dataset_input[i,:,:] = self.data_norm[i : i+self.input_seq_len]
             try:
-                self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+1: i+self.input_seq_len+self.output_seq_len+1,0]
+                #self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+1: i+self.input_seq_len+self.output_seq_len+1,0]
+                self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+self.output_steps_ahead+1,0]
             except:
                 print("Something didn't match!")
