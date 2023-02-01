@@ -1,0 +1,52 @@
+
+import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
+
+class EvolvingSystem(nn.Module):
+    def __init__(self, input_dim, output_dim, cluster_dim, num_clusters):
+        super(EvolvingSystem, self).__init__()
+        self.input_size = input_dim
+        self.output_size = output_dim
+        self.cluster_dim = cluster_dim
+        self.num_clusters = num_clusters
+
+        self.mu = torch.nn.Parameter(data=torch.randn(self.num_clusters,self.cluster_dim), requires_grad=True)
+        self.sigma_inv = torch.nn.Parameter(data=torch.randn(self.num_clusters,self.cluster_dim, self.cluster_dim), requires_grad=True)
+        self.sigma_alpha = torch.nn.Parameter(data=torch.randn(self.num_clusters,self.cluster_dim), requires_grad=True)
+        self.fc_ant = nn.Linear(input_length, self.cluster_dim) #self.cluster_dim
+        self.fc_con = nn.Linear(input_length, output_length) #output_length
+        self.sm = torch.nn.Softmax(dim = 1)
+        self.layer_norm = nn.LayerNorm(input_length)
+        
+    def forward(self, x):
+        #torch.Size([256, 128, 16]); IxBxH
+        #self.x = x.flatten()
+        x = x.reshape(batch_size,1,input_length)
+        x_con = x.reshape(batch_size,1,input_length)
+        
+        x = self.layer_norm(x)
+        self.x_ant = self.fc_ant(x)
+        self.x_ant = self.x_ant
+        d = torch.sub(self.mu, self.x_ant)
+        dl = d.reshape(batch_size,self.num_clusters,1,self.cluster_dim)
+        #TEST OK -> self.mu-self.x_ant[0][0], d[0], dl[0]
+        #alpha = torch.diag_embed(torch.mul(self.sigma_alpha, self.sigma_alpha)) 
+        #sigma_inv = torch.matmul(alpha, torch.transpose(self.sigma_inv, 2, 1))
+        #sigma_inv = torch.matmul(self.sigma_inv, sigma_inv)
+        sigma_inv = torch.matmul(self.sigma_inv, torch.transpose(self.sigma_inv, 2, 1))
+        
+        d2_dS = torch.matmul(dl, sigma_inv)
+        dr = d.reshape(batch_size,self.num_clusters,self.cluster_dim,1)
+        d2 = torch.matmul(d2_dS, dr)
+        psi = self.sm(-d2).reshape(batch_size,1,self.num_clusters)
+        #TEST OK -> self.sm(-d2).reshape(batch_size,1,self.num_clusters)[0], self.sm(-d2)
+        
+        x_con = x_con.repeat(1,self.num_clusters,1)
+        y_con = self.fc_con(x_con)#.reshape(batch_size, -1, self.num_clusters) #.reshape(batch_size, output_length, self.num_clusters)
+        y =  torch.matmul(psi,y_con)
+        
+        #final_out = self.fc(out)
+        return y

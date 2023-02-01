@@ -115,13 +115,13 @@ class StockData():
         axes[1,1].legend((self.names[3][0],))
     
     def create_dataset(self):
-        dataset_length = len(self.data_norm)-self.input_seq_len-self.output_seq_len-1
+        dataset_length = len(self.data_norm)-self.input_seq_len-self.output_seq_len-1-self.output_steps_ahead
         self.dataset_input = np.empty((dataset_length,self.input_seq_len,4))
         self.dataset_output = np.empty((dataset_length,self.output_seq_len))
         for i in range(dataset_length):
             self.dataset_input[i,:,:] = self.data_norm[i : i+self.input_seq_len]
             try:
-                #self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+1: i+self.input_seq_len+self.output_seq_len+1,0]
-                self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+self.output_steps_ahead+1,0]
+                self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+1+self.output_steps_ahead: i+self.input_seq_len+self.output_seq_len+1+self.output_steps_ahead,0]
+                #self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+self.output_steps_ahead+1,0]
             except:
                 print("Something didn't match!")
