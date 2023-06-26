@@ -10,7 +10,7 @@ class Ellipse():
         self.n_c = self.Sigma.shape[0]
         self.n_s = 100
         
-    def confidence_ellipse(self):
+    def compute_confidence_ellipse(self):
         ellipse = np.zeros((self.n_c,self.n_s,2))
         w, v = LA.eig(self.Sigma)
         kot = np.linspace(0,2*math.pi,self.n_s,endpoint=True).reshape([-1,1])
