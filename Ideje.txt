@@ -1,0 +1,10 @@
+- kako se vhodni regresor transformira preko attention mehanizma
+- kako spreminjam parameter vector z evolving?
+ 	kako pišem nazaj noter če je eksponentno in pomnozeno?
+	X	
+	A = exp(X)
+	S = A'A
+	X = log(A)
+
+- Kullback–Leibler divergence should be further examined
+- Compute S from inside the neural network so that it does not have to be computed every time.

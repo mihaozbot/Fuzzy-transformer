@@ -79,7 +79,13 @@ class StockData():
         self.data_dropped.columns = ["SNP","GOLD","VIX","BONDS"]
         if self.data_dropped.isnull().values.any():
             self.data_dropped = self.data_dropped.fillna(method='ffill')
-            print("Nani?! in data")   
+            self.data_dropped = self.data_dropped.fillna(method='bfill')
+            #self.data_dropped.fillna(method='ffill', inplace=True) 
+            if self.data_dropped.isnull().values.any():
+                print("NaN in data! Failed to fix Nan!") 
+            else:
+                print("NaN in data! Fixed.")  
+
         
     def norm_data(self):
         self.scalar = MinMaxScaler(feature_range = (0,1))
@@ -88,7 +94,10 @@ class StockData():
     def clean_datasnp(self):
         self.datasnp_dropped = self.datasnp.loc[:, (self.datasnp.columns.get_level_values(0) == 'Close')] 
         self.datasnp_dropped.columns = ["SNP"]
-        
+        if self.datasnp_dropped.isnull().values.any():
+            self.datasnp_dropped = self.datasnp_dropped.fillna(method='ffill')
+            print("Nani?! in S&P500 data")  
+
     def dates_datasnp(self): 
         self.datasnp_dates = self.datasnp.reset_index()    
         self.datasnp_dates = self.datasnp_dates.loc[:, (self.datasnp_dates.columns.get_level_values(0) == 'Close') | (self.datasnp_dates.columns.get_level_values(0) == 'Date')] 
