@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+from torch.utils.data import Dataset, DataLoader
+import torch
+import torch.nn as nn
 
 class StockData():
     def __init__(self, input_length, output_length,output_steps_ahead):
@@ -134,3 +137,17 @@ class StockData():
                 #self.dataset_output[i,:] = self.data_norm[i+self.input_seq_len+self.output_steps_ahead+1,0]
             except:
                 print("Something didn't match!")
+
+class Stockdataset(Dataset):
+    def __init__(self, data, input_length, output_length = 1):
+        self.data = data
+        self.data = torch.from_numpy(data).float()#.view(-1)
+        self.seq_len = input_length
+        self.out_len = output_length
+
+    def __len__(self):
+        return len(self.data)-(self.seq_len+self.out_len+1)
+
+    def __getitem__(self, index):
+        return self.data[index : index+self.seq_len], self.data[index+self.seq_len+1: index+self.seq_len+self.out_len+1,0]
+        

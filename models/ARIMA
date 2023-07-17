@@ -1,0 +1,82 @@
+import torch
+import torch.nn as nn
+import matplotlib.pyplot as plt
+
+class ARIMAModel(nn.Module):
+    def __init__(self, ar_order, ma_order, num_exog, num_models, sequence_length):
+        super(ARIMAModel, self).__init__()
+        self.ar_order = ar_order
+        self.ma_order = ma_order
+        self.num_exog = num_exog
+        self.num_models = num_models
+        self.sequence_length = sequence_length
+        
+        # Create multiple linear layers for AR part
+        self.ar_linears = nn.ModuleList([nn.Linear(ar_order + num_exog + 1, 1, bias=False) for _ in range(num_models)])
+        
+        # Create multiple linear layers for MA part
+        self.ma_linears = nn.ModuleList([nn.Linear(ma_order + num_exog + 1, 1, bias=False) for _ in range(num_models)])
+
+    def forward(self, y, u):
+        batch_size = y.size(0)
+
+        # Initialize the output
+        output = torch.zeros(batch_size, self.num_models, self.sequence_length).to(y.device)
+
+        # Start by filling in the initial conditions for the output
+        output[:, :, :self.ar_order] = y.repeat(1, self.num_models, 1)[:, :, :self.ar_order]
+
+        for t in range(self.ar_order, self.sequence_length):
+            for i, (ar_linear, ma_linear) in enumerate(zip(self.ar_linears, self.ma_linears)):
+                # Use the most recent output values and exogenous variables as the regressor for AR part
+                ar_regressor = torch.cat((output[:, i:i+1, t-self.ar_order:t], u, torch.ones(batch_size, 1, 1)), dim=2)
+                ar_regressor_t = ar_regressor.squeeze(1)
+                ar_prediction_t = ar_linear(ar_regressor_t)
+                
+                # Use the previous error terms and exogenous variables as the regressor for MA part
+                ma_regressor = torch.cat((output[:, i:i+1, t-self.ma_order:t] - ar_prediction_t, u, torch.ones(batch_size, 1, 1)), dim=2)
+                ma_regressor_t = ma_regressor.squeeze(1)
+                ma_prediction_t = ma_linear(ma_regressor_t)
+                
+                # Compute the final prediction by combining AR and MA predictions
+                prediction_t = ar_prediction_t + ma_prediction_t
+        
+                # Store the prediction in the output tensor
+                output[:, i, t] = prediction_t.squeeze()
+
+        return output
+    
+# Set the parameters
+ar_order = 3
+ma_order = 0
+num_exog = 0
+num_models = 10
+batch_size = 1
+sequence_length = 200
+
+# Create dummy input data
+y = torch.randn(batch_size, 1, ar_order)  # Output signal with shape (batch_size, 1, ar_order)
+u = torch.randn(batch_size, 1, num_exog)  # Exogenous input signal with shape (batch_size, 1, num_exog)
+
+# Create the ARIMA model
+modelARIMA = ARIMAModel(ar_order, ma_order, num_exog, num_models, sequence_length)
+
+# Forward pass to get the predictions
+predictions = modelARIMA(y, u)
+
+# Prepare the plot
+plt.figure(figsize=(8, 6))
+
+# Plotting the predictions from each model
+for i in range(num_models):
+    plt.plot(range(sequence_length), predictions[0, i, :].detach().numpy(), label=f'Prediction from model {i+1}')
+
+# Plotting the initial signal
+plt.plot(range(ar_order), y[0, 0, :].numpy(), label='Initial Signal', linewidth=2, linestyle='dashed')
+
+plt.xlabel('Time Step')
+plt.ylabel('Signal')
+plt.title('Predictions and Initial Signal')
+plt.legend()
+plt.grid(True)
+plt.show()

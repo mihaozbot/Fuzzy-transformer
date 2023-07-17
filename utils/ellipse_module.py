@@ -18,7 +18,7 @@ class Ellipse():
             rotation = np.concatenate((np.cos(kot), np.sin(kot)), axis = 1)
             #print(np.diag(np.sqrt(w[index,:])))
             #print(v[index,:,:].shape)
-            distance = np.matmul(np.diag(2*np.sqrt(w[index,:]))*self.n_std,v[index,:,:])
+            distance = np.matmul(np.diag(np.sqrt(w[index,:]))*self.n_std,v[index,:,:])
             #print(distance.shape)
             ellipse[index,:] = np.matmul(rotation, distance)
             ellipse[index,:]  = ellipse[index,:] + self.mu[index,:]
