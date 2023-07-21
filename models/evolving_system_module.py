@@ -7,7 +7,7 @@ import models.ARX_module as ARX_module
 reload(ARX_module)
 
 class EvolvingSystem(nn.Module):
-    def __init__(self, batch_size, input_length, output_dim, output_length,  num_clusters, latent_dim, regressor_dim, order, min_clamp, max_clamp):
+    def __init__(self, batch_size, input_length, output_dim, output_length,  num_clusters, latent_dim, regressor_dim, exogenous_dim, order, min_clamp, max_clamp):
         super(EvolvingSystem, self).__init__()
         self.input_length = input_length
         self.output_dim = output_dim
@@ -15,22 +15,23 @@ class EvolvingSystem(nn.Module):
         self.cluster_dim = latent_dim
         self.num_clusters = num_clusters
         self.regressor_dim = regressor_dim
+        self.exogenous_dim = exogenous_dim
         self.order = order
         self.min_clamp = min_clamp
         self.max_clamp = max_clamp
         self.batch_size = batch_size
-        self.mu = torch.nn.Parameter(data = 1*torch.rand(self.num_clusters, self.cluster_dim), requires_grad=True)
+        self.mu = torch.nn.Parameter(data = 2*torch.rand(self.num_clusters, self.cluster_dim)-1/2, requires_grad=True)
         self.sigma_inv = nn.Parameter(torch.zeros(self.num_clusters, self.cluster_dim, self.cluster_dim), requires_grad=True)
         with torch.no_grad():
             self.sigma_inv.diagonal(dim1=-2, dim2=-1).fill_(10)
             
         # Create separate ARX layers for fc_con and fc_recon
         self.fc_con_layers = nn.ModuleList([
-            ARX_module.ARX(self.regressor_dim+self.order+1, self.output_length)
+            ARX_module.ARX(self.regressor_dim, self.output_length, self.order)
             for _ in range(self.num_clusters)
         ])
         self.fc_recon_layers = nn.ModuleList([
-            ARX_module.ARX(self.regressor_dim+self.order+1, self.input_length)
+            ARX_module.ARX(self.input_length+1, self.input_length, input_length)
             for _ in range(self.num_clusters)
         ])
 
@@ -132,29 +133,33 @@ class EvolvingSystem(nn.Module):
         #final_out = self.fc(out)
         return y_con, x_recon
     '''
-    def forward(self, z, u, member):
+    def forward(self, y, z, u, member):
         device = z.device 
         self.psi = self.compute_psi(z)  # Move z to the same device as self.psi
 
         y_con_i = []
         x_recon_i = []
-        self.x_LLM = []
-        self.y_LLM = []
-
+        y_LLM_list = []
+        x_LLM_list = []
+        y_LLM_all_list = []
         for i in range(self.num_clusters):
             fc_con_layer = self.fc_con_layers[i].to(device)
             fc_recon_layer = self.fc_recon_layers[i].to(device)
 
-            self.y_LLM.append(fc_con_layer(u, z))
-            y_con_i.append(self.psi[:, :, i] * self.y_LLM[i])
+            y_LLM = fc_con_layer(y, u)
+            y_LLM_list.append(y_LLM[:, self.order:])
+            y_LLM_all_list.append(self.psi[:, :, i]*y_LLM)
+            y_con_i.append(self.psi[:, :, i]* y_LLM[:, self.order:])
 
-            self.x_LLM.append(fc_recon_layer(u, z))
-            x_recon_i.append(member[:, :, i] * self.x_LLM[i])
+            x_LLM = fc_recon_layer(torch.zeros(self.batch_size,self.input_length).to(device), torch.zeros(self.batch_size,self.input_length ).to(device))
+            x_LLM_list.append(x_LLM[:, self.order:])
+            x_recon_i.append(self.psi[:, :, i]* x_LLM)
 
         y_con = torch.stack(y_con_i, dim=1).sum(dim=1).unsqueeze(1)
-        x_recon = torch.stack(x_recon_i, dim=1).sum(dim=1).unsqueeze(1)
-
-        self.x_LLM = torch.stack(self.x_LLM, dim=1)
-        self.y_LLM = torch.stack(self.y_LLM, dim=1)
+        #x_recon = torch.stack(x_recon_i, dim=1).sum(dim=1).unsqueeze(1)
+        x_recon = torch.zeros(self.batch_size,self.input_length).to(device)
+        self.x_LLM = x_recon
+        self.y_LLM_all = torch.stack(y_LLM_all_list, dim=1).sum(dim=1).unsqueeze(1)
+        self.y_LLM = torch.stack(y_LLM_list, dim=1)
 
         return y_con, x_recon

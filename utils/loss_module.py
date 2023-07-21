@@ -271,38 +271,6 @@ class TotalVariationLoss(torch.nn.Module):
 
         return combined_loss
 
-class SmoothRangeLoss(torch.nn.Module):
-    def __init__(self, smoothness_scale=1.0, range_scale=1.0):
-        super(SmoothRangeLoss, self).__init__()
-        self.smoothness_scale = smoothness_scale
-        self.range_scale = range_scale
-
-    def forward(self, signal):
-        smoothness_loss = self.calculate_smoothness_loss(signal)
-        range_loss = self.calculate_range_loss(signal)
-
-        combined_loss = self.smoothness_scale * smoothness_loss + self.range_scale * range_loss
-
-        return combined_loss
-
-    def calculate_smoothness_loss(self, signal):
-        diff = signal[:, :, 1:] - signal[:, :, :-1]
-        smoothness_loss = torch.sum(diff ** 2)
-
-        return smoothness_loss
-
-    def calculate_range_loss(self, signal):
-        signal_min = torch.min(signal, dim=2)[0]
-        signal_max = torch.max(signal, dim=2)[0]
-        
-        range_loss = torch.sum(torch.relu(signal_min) + torch.relu(1 - signal_max))
-        
-        return range_loss
-import torch
-import torch.nn as nn
-import torch
-import torch.nn as nn
-
 class OrthogonalityLoss(nn.Module):
     def __init__(self):
         super(OrthogonalityLoss, self).__init__()
@@ -327,21 +295,31 @@ class OrthogonalityLoss(nn.Module):
 
         return loss
 
-class BalanceMaxActivationsLoss(nn.Module):
-    def __init__(self):
-        super(BalanceMaxActivationsLoss, self).__init__()
+class EntropyLoss(nn.Module):
+    def __init__(self, lambda_entropy=0.1):
+        super(EntropyLoss, self).__init__()
+        self.lambda_entropy = lambda_entropy
+        self.sm = torch.nn.Softmax(dim = 1)
+    
+    def compute_psi(self, mu, sigma_inv, z):
+        d = torch.sub(mu, z)
+        dl = d.reshape(z.shape[0], mu.shape[0], 1, mu.shape[1])
+        
+        sigma_inv_mat = torch.matmul(sigma_inv, torch.transpose(sigma_inv, 2, 1))
+        d2_dS = torch.matmul(dl, sigma_inv_mat)
 
-    def forward(self, psi):
-        batch_size, _, num_clusters = psi.shape
-        #max_activations, _ = torch.max(psi, dim=2)
-        cluster_counts = torch.zeros(num_clusters, dtype=torch.float32).to(psi.device)
-        
-        for i in range(batch_size):
-            max_activation_i, cluster_idx = torch.max(psi[i, :, :], dim=1)
-            cluster_counts[cluster_idx] += 1
-        
-        mean_count = torch.mean(cluster_counts)
-        loss = torch.sum(torch.pow(cluster_counts - mean_count, 2))
-        loss /= num_clusters
-        
-        return loss
+        dr = d.reshape(z.shape[0], mu.shape[0], mu.shape[1], 1)
+        d2 = torch.clamp(torch.matmul(d2_dS, dr), min=1e-8)
+
+        probs = self.sm(-d2.reshape(z.shape[0], mu.shape[0],1))
+        psi = probs.reshape(z.shape[0], 1, mu.shape[0])
+        return psi
+
+    def forward(self, mu, sigma_inv, z):
+        psi = self.compute_psi(mu, sigma_inv, z)
+
+        # Entropy regularization term
+        entropy = -1/torch.sum(psi * torch.log(psi + 1e-32), dim=-1)
+        entropy_reg = self.lambda_entropy * entropy.mean()
+
+        return entropy_reg
