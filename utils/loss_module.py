@@ -156,7 +156,7 @@ class OverlappingLoss(torch.nn.Module):
         clusters = mu.shape[0]
         
         mu = mu.reshape(1, clusters, dim)
-        sigma = torch.matmul((sigma_inv), (torch.transpose((sigma_inv), 2, 1)))
+        sigma = torch.inverse(torch.matmul((sigma_inv), (torch.transpose((sigma_inv), 2, 1))))
         d_B = torch.zeros(clusters,clusters)
         for i in range(clusters):
             for j in range(clusters):
@@ -164,8 +164,12 @@ class OverlappingLoss(torch.nn.Module):
                 d_mu_t = d_mu.reshape(1, dim)
                 sigma_ij = (sigma[i] + sigma[j])/2
                 d_B[i,j] = (1/8)*torch.matmul(torch.matmul(d_mu_t,torch.inverse(sigma_ij)),d_mu) + (1/2)*torch.log(torch.det(sigma_ij)/torch.sqrt( torch.det(sigma[i])*torch.det(sigma[j]) ))
-                
-        loss_B = -torch.mean(d_B)
+                if d_B[i,j] < 1e-10:
+                    d_B[i,j] = 1e-10
+                if d_B[i,j] > 3:
+                    d_B[i,j] = 3
+
+        loss_B = 1/torch.sum(d_B)
         return loss_B
     
     

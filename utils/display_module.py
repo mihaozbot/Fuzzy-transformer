@@ -10,30 +10,34 @@ import utils.ellipse_module as ellipse_module
 reload(ellipse_module)
 import math
 import os
-
 def display_clustering(sigma_inv, mu, z):
-        # Create a new figure
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        #display.display(pl.gcf())
-        clusters = mu.shape[0]
-        display.clear_output(wait=True) 
-        sigma_inv = torch.matmul((sigma_inv), torch.transpose((sigma_inv), 2, 1))
-        sigma = inv(sigma_inv.detach().cpu().numpy())
-        nc_plot = mu.shape[0]
-        sigma = sigma[0:nc_plot,0:2,0:2]
-        mu = mu.detach().cpu().numpy()
-        mu = mu[0:nc_plot,0:2]
-        ellipse = ellipse_module.Ellipse(sigma,mu,1)
-        ellipse_points = ellipse.compute_confidence_ellipse()
-        ellipse_points = np.einsum('ijk->jik', ellipse_points)
-        ax.plot(ellipse_points[:,:,0],ellipse_points[:,:,1])
-        #color = iter(cm.rainbow(np.linspace(0, 1, clusters)))
-        #for i in range(clusters):
-        #        c = next(color)
-        #        plt.plot(ellipse_points[:,i,0],ellipse_points[:,i,1], c=c)
-        display.clear_output(wait=True)
-        
+    # Create a new figure
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    clusters = mu.shape[0]
+    display.clear_output(wait=True) 
+
+    sigma_inv = torch.matmul((sigma_inv), torch.transpose((sigma_inv), 2, 1))
+    sigma = inv(sigma_inv.detach().cpu().numpy())
+    nc_plot = mu.shape[0]
+    sigma = sigma[0:nc_plot,0:2,0:2]
+    mu = mu.detach().cpu().numpy()
+    mu = mu[0:nc_plot,0:2]
+    ellipse = ellipse_module.Ellipse(sigma,mu,1)
+    ellipse_points = ellipse.compute_confidence_ellipse()
+    ellipse_points = np.einsum('ijk->jik', ellipse_points)
+    
+    # Use a colormap
+    color_map = plt.get_cmap('jet')  # 'rainbow' can be replaced with any other available colormap
+    colors = [color_map(i) for i in np.linspace(0, 1, clusters)]
+    
+    for i, c in enumerate(colors):
+        ax.plot(ellipse_points[:,i,0],ellipse_points[:,i,1], color=c)
+
+    display.clear_output(wait=True)
+
+
 def display_membership(psi, z, epoch):
         if not plt.get_fignums():
                 print("No figure exists.")
