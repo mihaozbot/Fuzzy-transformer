@@ -62,6 +62,7 @@ def display_attention(att):
         plt.show()
 
 def visualize_attention_weights(attention_weights,epoch, fill_figure=False):
+
     num_layers, num_heads, seq_length, _ = attention_weights.shape
     
     for layer_idx in range(num_layers):

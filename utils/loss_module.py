@@ -164,12 +164,12 @@ class OverlappingLoss(torch.nn.Module):
                 d_mu_t = d_mu.reshape(1, dim)
                 sigma_ij = (sigma[i] + sigma[j])/2
                 d_B[i,j] = (1/8)*torch.matmul(torch.matmul(d_mu_t,torch.inverse(sigma_ij)),d_mu) + (1/2)*torch.log(torch.det(sigma_ij)/torch.sqrt( torch.det(sigma[i])*torch.det(sigma[j]) ))
-                if d_B[i,j] < 1e-10:
-                    d_B[i,j] = 1e-10
-                if d_B[i,j] > 3:
-                    d_B[i,j] = 3
+                if d_B[i,j] < 1e-3:
+                    d_B[i,j] = 1e-3
+                if d_B[i,j] > 2:
+                    d_B[i,j] = 2
 
-        loss_B = 1/torch.sum(d_B)
+        loss_B = torch.sum(1/d_B)
         return loss_B
     
     

@@ -6,6 +6,8 @@ import torch.nn.functional as F
 from importlib import reload 
 import models.ARX_module as ARX_module
 reload(ARX_module)
+import models.ARIMAX_module as ARIMAX_module
+reload(ARIMAX_module)
 import models.LSTM_decoder_module as LSTM_decoder_module
 reload(LSTM_decoder_module)
 
@@ -27,12 +29,19 @@ class EvolvingSystem(nn.Module):
         self.sigma_inv = nn.Parameter(torch.zeros(self.num_clusters, self.cluster_dim, self.cluster_dim), requires_grad=True)
         with torch.no_grad():
             self.sigma_inv.diagonal(dim1=-2, dim2=-1).fill_(100)
-        
+        '''
         # Create separate ARX layers for fc_con and fc_recon
         self.fc_con_layers = nn.ModuleList([
             ARX_module.ARX(self.regressor_dim, self.output_length, self.order, self.exogenous_dim)
             for _ in range(self.num_clusters)
         ])
+        '''
+        # Create separate ARIMAX layers for fc_con and fc_recon
+        self.fc_con_layers = nn.ModuleList([
+            ARIMAX_module.ARIMAX(self.regressor_dim, self.output_length, self.order, self.exogenous_dim)
+            for _ in range(self.num_clusters)
+        ])
+        
         '''
         self.fc_recon_layers = nn.ModuleList([
             ARX_module.ARX(self.input_length+1, self.input_length, input_length)
@@ -170,10 +179,10 @@ class EvolvingSystem(nn.Module):
             #fc_recon_layer = self.fc_recon_layers[i].to(device)
 
             y_LLM = fc_con_layer(y, u)
-            y_LLM_list.append(y_LLM[:, self.order:])
-            y_LLM_all_list.append(winner_mask[:, :, i]*y_LLM)
+            y_LLM_list.append(y_LLM[:, -self.output_length:])
+            y_LLM_all_list.append(winner_mask[:, :, i]*y_LLM[:, (-self.output_length-self.order):])
             
-            y_con_i.append(winner_mask[:, :, i]* y_LLM[:, self.order:])
+            y_con_i.append(winner_mask[:, :, i]* y_LLM[:, -self.output_length:])
 
             #x_LLM = fc_recon_layer(torch.zeros(self.batch_size,self.input_length).to(device), torch.zeros(self.batch_size,self.input_length ).to(device))
             #x_LLM_list.append(x_LLM[:, self.order:])

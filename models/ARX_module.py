@@ -11,7 +11,7 @@ class ARX(nn.Module):
         self.ar_order = ar_order
         self.exogenous_dim = exogenous_dim
         # Create single linear layer
-        self.linear = nn.Linear(self.regressor_dim, 1, bias=False)
+        self.linear = nn.Linear(self.regressor_dim, 1, bias = False)
 
     def forward(self, y, u):
         batch_size = y.size(0)
@@ -26,7 +26,7 @@ class ARX(nn.Module):
         for t in range(self.ar_order, self.sequence_length+self.ar_order):
             # Use the most recent output values and exogenous variables as the regressor
             #regressor = torch.cat((output[:, (t-self.ar_order):t], u[:,t-self.ar_order].unsqueeze(1)), dim=1)
-            regressor = torch.cat((output[:, (t-self.ar_order):t],
+            regressor = torch.cat((output[:, (t-self.ar_order):(t)],
                                     u[:,(t-self.ar_order):(t-self.ar_order+self.exogenous_dim)]), dim=1)
             # Compute the prediction
             prediction_t = self.linear(regressor)
