@@ -10,6 +10,8 @@ import utils.ellipse_module as ellipse_module
 reload(ellipse_module)
 import math
 import os
+
+
 def display_clustering(sigma_inv, mu, z):
     # Create a new figure
     fig = plt.figure()
@@ -38,7 +40,7 @@ def display_clustering(sigma_inv, mu, z):
     display.clear_output(wait=True)
 
 
-def display_membership(psi, z, epoch):
+def display_membership(psi, z, epoch, type):
         if not plt.get_fignums():
                 print("No figure exists.")
 
@@ -51,7 +53,7 @@ def display_membership(psi, z, epoch):
         
         save_dir = '../images/clusters'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
-        save_path = os.path.join(save_dir, f'clusters_{epoch}.pdf')
+        save_path = os.path.join(save_dir, f'clusters_{epoch}_{type}.pdf')
         plt.savefig(save_path)
         plt.show()
         
@@ -61,39 +63,48 @@ def display_attention(att):
         plt.colorbar(im)
         plt.show()
 
-def visualize_attention_weights(attention_weights,epoch, fill_figure=False):
+import matplotlib.pyplot as plt
+import os
+import math
 
+def visualize_attention_weights(attention_weights, epoch, fill_figure=False):
     num_layers, num_heads, seq_length, _ = attention_weights.shape
-    
+
     for layer_idx in range(num_layers):
         layer_weights = attention_weights[layer_idx]
         num_heads = layer_weights.size(0)
-        
+
         # Calculate the number of rows and columns based on the number of heads
         num_cols = int(math.ceil(math.sqrt(num_heads)))
         num_rows = int(math.ceil(num_heads / num_cols))
-        
+
+        # Define a scale factor for the size of each subplot
+        scale_factor = 2 
+
         # Calculate the figure size to maintain square subplots
-        figsize = (num_cols, num_rows)
-        
+        figsize = (num_cols * scale_factor, num_rows * scale_factor)
+
         plt.figure(figsize=figsize)
-        
+
         for head_idx in range(num_heads):
             head_weights = layer_weights[head_idx]
-            
+
             plt.subplot(num_rows, num_cols, head_idx + 1)
             plt.imshow(head_weights.detach().numpy(), cmap='hot', interpolation='nearest', aspect='auto')
             plt.axis('off')  # Remove the axis labels and ticks
-        
+
         # Adjust the spacing between subplots
         plt.subplots_adjust(wspace=1, hspace=1)
         plt.tight_layout(pad=0.1)
-        
+
         save_dir = '../images/attention'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
         save_path = os.path.join(save_dir, f'attention_layer_{layer_idx + 1}_{epoch}.pdf')
         plt.savefig(save_path)
         plt.show()
+
+
+
 '''      
 def plot_llm(llm_data):
     # Move the tensor from GPU to CPU and detach the gradient
@@ -123,7 +134,42 @@ def plot_llm(llm_data):
     plt.savefig('../images/LLMs.pdf')
     plt.show()
 '''
-def visualize_llm_square(llm_data,epoch):
+# Calculate the figure size based on the number of subfigures
+
+def visualize_inputs(u, epoch, type):
+    # Move the tensor from GPU to CPU and detach the gradient
+    u = u.detach().cpu().numpy()
+
+    # Get the dimensions of the data
+    batch_size, _ , signal_length = u.shape
+
+    # Create a new figure
+    plt.figure(figsize=(3,2))
+
+    # For each batch, plot the signal
+    for i in range(batch_size):
+        plt.plot(u[i, 0, :])
+
+    # Add a title and labels
+    plt.title(f'Input signals at epoch {epoch}, type {type}')
+    plt.xlabel('Time')
+    plt.ylabel('Amplitude')
+
+    # Improve layout
+    plt.tight_layout()
+
+    # Define the directory to save the plot and create it if it doesn't exist
+    save_dir = '../images/inputs'
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Define the full path for the output file
+    save_path = os.path.join(save_dir, f'visualize_llm_square_{epoch}.pdf')
+    
+    # Save the figure
+    plt.savefig(save_path)
+
+
+def visualize_llm(llm_data,epoch):
         # Move the tensor from GPU to CPU and detach the gradient
         llm_data = llm_data.detach().cpu().numpy()
 
@@ -167,4 +213,4 @@ def visualize_llm_square(llm_data,epoch):
         save_path = os.path.join(save_dir, f'visualize_llm_square_{num_rows}x{num_cols}_{epoch}.pdf')
         plt.savefig(save_path)
 
-        plt.show()
+        #plt.show()

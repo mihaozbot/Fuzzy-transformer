@@ -27,7 +27,7 @@ class ARIMAX(nn.Module):
             # Use the most recent output values and exogenous variables as the regressor
             #regressor = torch.cat((output[:, (t-self.ar_order):t], u[:,t-self.ar_order].unsqueeze(1)), dim=1)
             regressor = torch.cat((output[:, (t-self.ar_order):(t)] - output[:, (t-self.ar_order-1):(t-1)],
-                                    u[:,(t-self.ar_order-1):(t-self.ar_order+self.exogenous_dim-1)]), dim=1)
+                                    u[:,(t-self.ar_order):(t-self.ar_order+self.exogenous_dim)]), dim=1)
             # Compute the prediction
             prediction_t = self.linear(regressor)
     

@@ -158,16 +158,18 @@ class EvolvingSystem(nn.Module):
         device = z.device 
         self.psi = self.compute_psi(z)  # Move z to the same device as self.psi
 
-        if self.training:
+        #if self.training:
             # Randomly switch between fuzzy strategy and winner-takes-all strategy
-            if torch.rand(1).item() < 0.5:
-                winner_mask = self.psi
-            else:
-                winner_indices = self.psi.argmax(dim=2)
-                winner_mask = F.one_hot(winner_indices, self.num_clusters).float().to(device)
-        else:
+        #    if torch.rand(1).item() < 0.5:
+        #        winner_mask = self.psi
+        #    else:
+        #        winner_indices = self.psi.argmax(dim=2)
+        #        winner_mask = F.one_hot(winner_indices, self.num_clusters).float().to(device)
+        #else:
             # Use fuzzy strategy during evaluation
-            winner_mask = self.psi
+        winner_mask = self.psi
+        #winner_indices = self.psi.argmax(dim=2)
+        #winner_mask = F.one_hot(winner_indices, self.num_clusters).float().to(device)
 
         y_con_i = []
         #x_recon_i = []

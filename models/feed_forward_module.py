@@ -25,10 +25,11 @@ class GRN(nn.Module):
         self.relu = nn.LeakyReLU()
         self.ln = nn.LayerNorm(input_size)
         self.l2 = nn.Linear(hidden_size, 2*input_size, bias =False)
-        
+        self.dropout = nn.Dropout(0.2)
+
     def forward(self, x):
         x_l1 = self.l1(x) 
-        x_l2 = self.relu(self.l2(self.relu(x_l1)))
+        x_l2 = self.dropout(self.relu(self.l2(x_l1)))
         x_glu = self.ln(self.glu(x_l2) + x)
         return x_glu
     
@@ -39,19 +40,19 @@ class Dense(nn.Module):
         
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size//2)
-        self.fc3 = nn.Linear(hidden_size//2, hidden_size//2)
-        self.fc4 = nn.Linear(hidden_size//2, hidden_size//4)
+        self.fc3 = nn.Linear(hidden_size//2, hidden_size//4)
+        self.fc4 = nn.Linear(hidden_size//4, hidden_size//4)
         self.fc5 = nn.Linear(hidden_size//4, output_size)
         
         self.relu = nn.LeakyReLU()
         self.dropout = nn.Dropout(0.1)
-    
+        #self.sm = nn.Softmax(dim=2)
 
     def forward(self, x):
 
         x = self.fc1(x)
-        x = (self.relu(self.fc2(x)))
-        x = (self.relu(self.fc3(x)))
-        x = (self.relu(self.fc4(x)))
-        x = self.fc5(x)
+        x = self.dropout(self.relu(self.fc2(x)))
+        x = self.dropout(self.relu(self.fc3(x)))
+        #x = self.dropout(self.relu(self.fc4(x)))
+        x = self.fc5((x))
         return x
