@@ -50,11 +50,16 @@ def display_membership(psi, z, epoch, type):
                 index = np.argmax(psi,2) == i
                 #plt.plot(z[index,0], z[index,1],'.') #color=plt.cm.RdYlBu(i))
                 ax.plot(z[index,0], z[index,1],'.', color = plt.gca().lines[i].get_color()) #color=plt.cm.RdYlBu(i))
-        
+
+        plt.xlabel('z1')
+        plt.ylabel('z2')
+        plt.subplots_adjust(left=0.15, right=0.95, bottom=0.15, top=0.95)
+
+
         save_dir = '../images/clusters'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
         save_path = os.path.join(save_dir, f'clusters_{epoch}_{type}.pdf')
-        plt.savefig(save_path)
+        plt.savefig(save_path, format='pdf', transparent=True)
         plt.show()
         
         
@@ -100,7 +105,7 @@ def visualize_attention_weights(attention_weights, epoch, fill_figure=False):
         save_dir = '../images/attention'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
         save_path = os.path.join(save_dir, f'attention_layer_{layer_idx + 1}_{epoch}.pdf')
-        plt.savefig(save_path)
+        plt.savefig(save_path, format='pdf', transparent=True)
         plt.show()
 
 
@@ -141,14 +146,14 @@ def visualize_inputs(u, epoch, type):
     u = u.detach().cpu().numpy()
 
     # Get the dimensions of the data
-    batch_size, _ , signal_length = u.shape
+    batch_size, num_clusters , signal_length = u.shape
 
     # Create a new figure
     plt.figure(figsize=(3,2))
 
     # For each batch, plot the signal
-    for i in range(batch_size):
-        plt.plot(u[i, 0, :])
+    for i in range(num_clusters):
+            plt.plot(u[0, i, :])
 
     # Add a title and labels
     plt.title(f'Input signals at epoch {epoch}, type {type}')
@@ -156,17 +161,18 @@ def visualize_inputs(u, epoch, type):
     plt.ylabel('Amplitude')
 
     # Improve layout
-    plt.tight_layout()
-
+    plt.subplots_adjust(left=0.15, right=0.95, bottom=0.15, top=0.95)
+    
     # Define the directory to save the plot and create it if it doesn't exist
     save_dir = '../images/inputs'
     os.makedirs(save_dir, exist_ok=True)
     
     # Define the full path for the output file
     save_path = os.path.join(save_dir, f'visualize_llm_square_{epoch}.pdf')
-    
+
+
     # Save the figure
-    plt.savefig(save_path)
+    plt.savefig(save_path, format='pdf', transparent=True)
 
 
 def visualize_llm(llm_data,epoch):
@@ -195,8 +201,8 @@ def visualize_llm(llm_data,epoch):
                 llm_cluster = llm_data[:, cluster_idx, :]
 
                 # Plot the whole signal for each batch
-                for batch_idx in range(batch_size):
-                        axs[cluster_idx].plot(np.arange(signal_length), llm_cluster[batch_idx])
+                #for batch_idx in range(batch_size):
+                axs[cluster_idx].plot(np.arange(signal_length), llm_cluster[0])
 
                 # Set the title and labels for the subfigure
                 axs[cluster_idx].set_title(f'Cluster {cluster_idx + 1}')
@@ -211,6 +217,6 @@ def visualize_llm(llm_data,epoch):
         save_dir = '../images/models'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
         save_path = os.path.join(save_dir, f'visualize_llm_square_{num_rows}x{num_cols}_{epoch}.pdf')
-        plt.savefig(save_path)
+        plt.savefig(save_path, format='pdf', transparent=True)
 
         #plt.show()
