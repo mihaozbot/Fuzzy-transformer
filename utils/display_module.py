@@ -55,7 +55,8 @@ def display_membership(psi, z, epoch, type):
         plt.ylabel('z2')
         plt.subplots_adjust(left=0.15, right=0.95, bottom=0.15, top=0.95)
 
-
+        plt.grid(False)
+        
         save_dir = '../images/clusters'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
         save_path = os.path.join(save_dir, f'clusters_{epoch}_{type}.pdf')
@@ -145,15 +146,11 @@ def visualize_inputs(u, epoch, type):
     # Move the tensor from GPU to CPU and detach the gradient
     u = u.detach().cpu().numpy()
 
-    # Get the dimensions of the data
-    batch_size, num_clusters , signal_length = u.shape
-
     # Create a new figure
     plt.figure(figsize=(3,2))
 
     # For each batch, plot the signal
-    for i in range(num_clusters):
-            plt.plot(u[0, i, :])
+    plt.plot(u[0, :])
 
     # Add a title and labels
     plt.title(f'Input signals at epoch {epoch}, type {type}')
@@ -180,7 +177,7 @@ def visualize_llm(llm_data,epoch):
         llm_data = llm_data.detach().cpu().numpy()
 
         # Get the dimensions of the data
-        batch_size, num_clusters, signal_length = llm_data.shape
+        num_clusters, signal_length = llm_data.shape
 
         # Calculate the number of rows and columns for the subplots
         num_rows = int(np.ceil(np.sqrt(num_clusters)))
@@ -198,22 +195,24 @@ def visualize_llm(llm_data,epoch):
         # Plot the whole signal for all batches
         for cluster_idx in range(num_clusters):
                 # Get the LLM data for the current cluster
-                llm_cluster = llm_data[:, cluster_idx, :]
+                llm_cluster = llm_data[cluster_idx, :]
 
                 # Plot the whole signal for each batch
                 #for batch_idx in range(batch_size):
-                axs[cluster_idx].plot(np.arange(signal_length), llm_cluster[0])
+                axs[cluster_idx].plot(np.arange(signal_length), llm_cluster)
 
                 # Set the title and labels for the subfigure
                 axs[cluster_idx].set_title(f'Cluster {cluster_idx + 1}')
                 axs[cluster_idx].set_xlabel('Time step')
                 axs[cluster_idx].set_ylabel('LLM Output')
 
+        
         # Remove any empty subplots
         for i in range(num_clusters, num_rows * num_cols):
                 fig.delaxes(axs[i])
 
         plt.tight_layout()
+        plt.grid(False)
         save_dir = '../images/models'
         os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
         save_path = os.path.join(save_dir, f'visualize_llm_square_{num_rows}x{num_cols}_{epoch}.pdf')
