@@ -9,7 +9,7 @@ class KMeansClusteringLoss(torch.nn.Module):
         dim = z.shape[2]
         clusters = mu.shape[0]
 
-        z = z.repeat(1,clusters,1)
+        z = z.repeat(1,1,clusters,1)
 
         mu = mu.reshape(1, clusters, dim)
         mu = mu.repeat(length, 1, 1)
@@ -29,7 +29,7 @@ class FuzzyCMeansClusteringLoss(torch.nn.Module):
         dim = z.shape[2]
         clusters = mu.shape[0]
 
-        z = z.repeat(1,clusters,1)
+        z = z.repeat(1,1,clusters,1)
 
         mu = mu.reshape(1, clusters, dim)
         mu = mu.repeat(length, 1, 1)
@@ -73,7 +73,7 @@ class QuadraticDiscriminantAnalysis(torch.nn.Module):
         length = z.shape[0]
         dim = z.shape[2]
         clusters = mu.shape[0]
-        z = z.repeat(1,clusters,1)
+        z = z.repeat(1,1,clusters,1)
         mu = mu.reshape(1,clusters,dim)
         mu = mu.repeat(length,1,1)
         d = torch.sub((mu),  z)
@@ -102,7 +102,7 @@ class GaussianMixtureLoss(torch.nn.Module):
         dim = z.shape[2]
         clusters = mu.shape[0]
         
-        z = z.repeat(1, clusters, 1)
+        z = z.repeat(1, 1, clusters, 1)
         mu = mu.reshape(1, clusters, dim)
         mu = mu.repeat(length, 1, 1)
         
@@ -183,7 +183,7 @@ class FuzzyContrastiveLoss(torch.nn.Module):
         dim = z.shape[2]
         clusters = mu.shape[0]
 
-        z = z.repeat(1, clusters, 1)
+        z = z.repeat(1,1, clusters, 1)
 
         mu = mu.reshape(1, clusters, dim)
         mu = mu.repeat(length, 1, 1)
@@ -220,7 +220,7 @@ class FuzzyCMeansLossWithPenalties(torch.nn.Module):
         dim = z.shape[2]
         clusters = mu.shape[0]
 
-        z = z.repeat(1, clusters, 1)
+        z = z.repeat(1, 1,clusters, 1)
 
         mu = mu.reshape(1, clusters, dim)
         mu = mu.repeat(length, 1, 1)
