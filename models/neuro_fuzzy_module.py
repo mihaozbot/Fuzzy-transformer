@@ -22,7 +22,6 @@ class NeuroFuzzyLayer(nn.Module):
         self.regressor_dim = regressor_dim
         self.order = order
 
-
         self.mu = torch.nn.Parameter(data = 0.1*2*(torch.rand(self.num_clusters, self.cluster_dim)-1/2), requires_grad=True)
         self.sigma_inv = nn.Parameter(torch.zeros(self.num_clusters, self.cluster_dim, self.cluster_dim), requires_grad=True)
         with torch.no_grad():
@@ -32,40 +31,34 @@ class NeuroFuzzyLayer(nn.Module):
 
         self.sm = torch.nn.Softmax(dim = 3)
 
-    def add_new_rule(self, z):
+    def add_new_rule(self, z):                                
         print('TODO')
         
-    def compute_centers(self, z):
+    def compute_centers(self, z):                                                                                                                                                                                                                                                                                
         psi = self.compute_psi(z)
-
         mu = torch.sum(torch.einsum('bmi, bmj->bji', psi, z),0)
         mu /= psi.sum(dim=0).clamp_min_(1e-12)
         
         return mu
-
     
     def compute_psi(self, z):
         
         d = torch.sub((self.mu), z.reshape(-1, self.input_length, 1, self.cluster_dim))
         dl = d.reshape(-1,self.input_length, self.num_clusters, 1, self.cluster_dim)
         dr = d.reshape(-1,self.input_length,  self.num_clusters, self.cluster_dim, 1)
-
         sigma_inv = torch.matmul((self.sigma_inv), torch.transpose((self.sigma_inv), 2, 1))
         d2 = torch.clamp( torch.matmul(torch.matmul(dl, sigma_inv), dr), min=1e-12)
-
         psi = self.sm(-d2.reshape(-1, self.input_length, 1, self.num_clusters))
 
         return psi  
 
     def forward(self, y, z):
         device = z.device 
-        batch_size, _, _ = y.shape
         self.psi = self.compute_psi(z)  # Move z to the same device as self.psi
-        
-
+         
         if self.training:
             # Randomly switch between fuzzy strategy and winner-takes-all strategy
-                winner_indices = self.psi.argmax(dim=3)
+                winner_indices = self.psi.argmax(dim = 3)
                 winner_mask = F.one_hot(winner_indices, self.num_clusters).float().to(device)
         else:
             # Use fuzzy strategy during evaluation
